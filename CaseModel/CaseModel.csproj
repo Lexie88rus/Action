@@ -41,16 +41,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Case.cs" />
-    <Compile Include="Feature.cs" />
     <Compile Include="ICase.cs" />
     <Compile Include="IFeature.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\DataScrapper\DataScrapper.csproj">
-      <Project>{a6700e69-bf2a-419a-bb5d-181ce444ea86}</Project>
-      <Name>DataScrapper</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

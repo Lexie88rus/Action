@@ -77,10 +77,6 @@
       <Project>{a6700e69-bf2a-419a-bb5d-181ce444ea86}</Project>
       <Name>DataScrapper</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Export\Export.csproj">
-      <Project>{8d57e4de-b894-4001-b0b7-66d3d9c4de18}</Project>
-      <Name>Export</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

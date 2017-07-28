@@ -17,7 +17,7 @@ namespace AccessKeyCreator
             try
             {
                 //Ключи для таблицы Sides
-                var sidesAll = connector.ExecuteQuery("select Sides.Id, Sides.CaseId, Cases.RID from Sides INNER JOIN Cases ON Sides.CaseId = Cases.CaseId");
+                /*var sidesAll = connector.ExecuteQuery("select Sides.Id, Sides.CaseId, Cases.RID from Sides INNER JOIN Cases ON Sides.CaseId = Cases.CaseId");
                 while (sidesAll.Read())
                 {
                     var id = sidesAll.IsDBNull(0) ? -1 : sidesAll.GetInt32(0);
@@ -27,7 +27,7 @@ namespace AccessKeyCreator
                     if (id == -1 || caseId == string.Empty || RID == -1) continue;
 
                     var r = connector.ExecuteQuery("update Sides set RID = " + RID + " where CaseId = " + caseId);
-                }
+                }*/
 
                 //Ключи для таблицы Documents
                 var docsAll = connector.ExecuteQuery("select Documents.RID, Documents.CaseId, Cases.RID from Documents INNER JOIN Cases ON Documents.CaseId = Cases.CaseId");

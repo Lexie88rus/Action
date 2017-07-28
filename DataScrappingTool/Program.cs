@@ -20,9 +20,9 @@ namespace DataScrappingTool
                 //var text = SolutionProcessor.GetSolutionText(filename);
                 //var str = SolutionProcessor.GetJudgeName(text);
 
-                var connector = new KadConnector(@"D:\Data Monsters\Action\Databases\Refuse.accdb");
+                //var connector = new KadConnector(@"D:\Data Monsters\Action\Databases\Refuse.accdb");
 
-                //var connector = new KadConnector(@"D:\Data Monsters\Action\Databases\Partial.accdb");
+                var connector = new KadConnector(@"D:\Data Monsters\Action\Databases\Partial.accdb");
 
                 var cases = new List<Case>();
 
@@ -31,10 +31,10 @@ namespace DataScrappingTool
 
                     //var judgeId = SolutionProcessor.GetJudgeId(connector, str, 1);
 
-                    var scrapper = new Scrapper(connector);
+                    var scrapper = new Scrapper(connector, @"D:\Data Monsters\Action\Databases\Partial.accdb");
                     var casesDb = scrapper.RawCases;
 
-                    cases = casesDb.Select(c => new Case(c, scrapper.DocumentTypes, (int)Decisions.Refuse)).ToList();
+                    cases = casesDb.Select(c => c.ConvertToCase((int)Decisions.Partial, scrapper.DocumentTypes)).ToList();
                 }
                 finally
                 {

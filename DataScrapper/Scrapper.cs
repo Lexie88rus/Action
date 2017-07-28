@@ -9,12 +9,17 @@ namespace DataScrapper
 {
     public class Scrapper
     {
-        public Scrapper(KadConnector connector)
+        public Scrapper(KadConnector connector, string connString)
         {
             this.connector = connector ?? throw new ArgumentNullException("connector");
+            this.connString = String.IsNullOrEmpty(connString) ? throw new ArgumentNullException("connString") :  connString;
         }
 
         private KadConnector connector;
+
+        private string connString;
+
+        private const int tasksNum = 10;
 
         /// <summary>
         /// Сырые данные о делах
@@ -37,7 +42,7 @@ namespace DataScrapper
             {
                 if (rawCases == null || rawCases.Count == 0)
                 {
-                    GetRawCasesData(connector);
+                    GetRawCasesData(connector, connString);
                     return rawCases;
                 }
                 else return rawCases;
@@ -104,11 +109,15 @@ namespace DataScrapper
             reader.Close();
         }
 
+        Task[] taskList = new Task[Scrapper.tasksNum];
+
+        static readonly object locker = new object();
+
         /// <summary>
         /// Получение сырых данных о делах
         /// </summary>
         /// <param name="connector">Курсор для чтения данных</param>
-        private void GetRawCasesData(KadConnector connector)
+        private void GetRawCasesData(KadConnector connector, string connString)
         {
             if (connector == null) throw new ArgumentNullException("connector");
 
@@ -135,114 +144,16 @@ namespace DataScrapper
                         CaseId = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
                     };
 
-                    //получаем всех участников процесса
-                    var sidesReader = connector.ExecuteQuery("select Name, Inn, Ogrn, SideTypeId, Address from Sides where RID = " + rawCase.RID);
-                    while (sidesReader.Read())
-                    {
-                        if (sidesReader.IsDBNull(3)) break;
-
-                        var sideType = (int)sidesReader.GetInt32(3);
-                        switch (sideType)
-                        {
-                            //ответчик
-                            case (int)Participants.Respondent:
-                                if (rawCase.Responent == null) rawCase.Responent = new List<Participant>();
-                                rawCase.Responent.Add(new Participant() { Name = sidesReader.IsDBNull(0) ? null : sidesReader.GetString(0), Inn = sidesReader.IsDBNull(1) ? null : sidesReader.GetString(1), Ogrn = sidesReader.IsDBNull(2) ? null : sidesReader.GetString(2), Address = sidesReader.IsDBNull(4) ? null : sidesReader.GetString(4) });
-                                break;
-                            //истец
-                            case (int)Participants.Claimant:
-                                if (rawCase.Claimant == null) rawCase.Claimant = new List<Participant>();
-                                rawCase.Claimant.Add(new Participant() { Name = sidesReader.IsDBNull(0) ? null : sidesReader.GetString(0), Inn = sidesReader.IsDBNull(1) ? null : sidesReader.GetString(1), Ogrn = sidesReader.IsDBNull(2) ? null : sidesReader.GetString(2), Address = sidesReader.IsDBNull(4) ? null : sidesReader.GetString(4) });
-                                break;
-                            //третья сторона
-                            case (int)Participants.ThirdParty:
-                                if (rawCase.ThirdParty == null) rawCase.ThirdParty = new List<Participant>();
-                                rawCase.ThirdParty.Add(new Participant() { Name = sidesReader.IsDBNull(0) ? null : sidesReader.GetString(0), Inn = sidesReader.IsDBNull(1) ? null : sidesReader.GetString(1), Ogrn = sidesReader.IsDBNull(2) ? null : sidesReader.GetString(2), Address = sidesReader.IsDBNull(4) ? null : sidesReader.GetString(4) });
-                                break;
-                            default:
-                                break;
-                        }
-
-                    }
-
-                    sidesReader.Close();
-
-                    //получаем документу по делу в первой инстанции
-                    var documentReader = connector.ExecuteQuery("select Documents.VersionId, Documents.TypeId, Documents.ContentTypeId from Documents where (Documents.CaseRID =" + rawCase.RID + ")");
-                    if (documentReader.HasRows)
-                        rawCase.Documents = new List<Document>();
-
-                    while (documentReader.Read())
-                    {
-                        try
-                        {
-                            if (!documentReader.IsDBNull(1))
-                            {
-                                var doc = new Document(documentTypes[(int)documentReader.GetInt32(1)]);
-
-                                //получаем тип содержимого документа
-                                if (!documentReader.IsDBNull(2))
-                                {
-                                    var contId = (int)documentReader.GetInt32(2);
-                                    if (documentContentTypes.ContainsKey(contId))
-                                    {
-                                        doc.DocContent = documentContentTypes[contId];
-                                        if (doc.DocContent.Contains("удовлетворить ходатайство"))
-                                        {
-                                            rawCase.Petition = true;
-                                        }
-
-                                        if (doc.DocContent.Contains("встречный иск"))
-                                        {
-                                            rawCase.Counterclaim = true;
-                                        }
-                                    }
-                                    else doc.DocContent = string.Empty;
-                                }
-
-                                //получаем название файла
-                                if (!documentReader.IsDBNull(0))
-                                {
-                                    if (rawCase.SolutionFilename == null) rawCase.SolutionFilename = new List<string>();
-                                    rawCase.SolutionFilename.Add(documentReader.GetString(0));
-
-                                    doc.Filename = documentReader.GetString(0);
-                                }
-                                rawCase.Documents.Add(doc);
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
-                    }
-
-                    documentReader.Close();
-
-                    var finalInstanceReader = connector.ExecuteQuery("select FinalInstance from [Финальная инстанция] where [Финальная инстанция].CaseRID =" + rawCase.RID);
-                    while (finalInstanceReader.Read())
-                    {
-                        rawCase.FinalInstanceId = finalInstanceReader.IsDBNull(0) ? -1 : finalInstanceReader.GetInt32(0);
-                    }
-
-                    finalInstanceReader.Close();
-
-                    var reconsiderationReader = connector.ExecuteQuery("select count(RegistrationDate) from Instances where InstanceLevelId = 1 and CaseRID =" + rawCase.RID);
-                    while (reconsiderationReader.Read())
-                    {
-                        if (!reconsiderationReader.IsDBNull(0))
-                        {
-                            rawCase.Reconsideration = reconsiderationReader.GetInt32(0) > 1 ? true : false;
-                        }
-                    }
-
-                    reconsiderationReader.Close();
+                    GetData(this.connString, rawCase);
 
                     i++;
 
-                    rawCases.Add(rawCase);
-
-                    if (i % 100 == 0) Console.WriteLine("Собрано данных по делам:" + i);
+                    if (i % 50 == 0)
+                    {
+                        Console.WriteLine("Собрано данных по делам:" + i);
+                        var cases = this.rawCases.Select(c => c.ConvertToCase((int)Decisions.Partial, this.DocumentTypes)).ToList();
+                        FeatureExport.ExportToCSV(cases, "D:\\Data Monsters\\Action\\dataset" + i.ToString() +".csv", ";");
+                    }
                 }
                 catch
                 {
@@ -251,6 +162,124 @@ namespace DataScrapper
             }
 
             reader.Close();
+        }
+
+        private void GetData(string connString, CaseDb rawCase)
+        {
+            var connector = new KadConnector(connString);
+
+            try
+            {
+
+                //получаем всех участников процесса
+                var sidesReader = connector.ExecuteQuery("select Name, Inn, Ogrn, SideTypeId, Address from Sides where CaseId = " + rawCase.CaseId);
+                while (sidesReader.Read())
+                {
+                    if (sidesReader.IsDBNull(3)) break;
+
+                    var sideType = (int)sidesReader.GetInt32(3);
+                    switch (sideType)
+                    {
+                        //ответчик
+                        case (int)Participants.Respondent:
+                            if (rawCase.Responent == null) rawCase.Responent = new List<Participant>();
+                            rawCase.Responent.Add(new Participant() { Name = sidesReader.IsDBNull(0) ? null : sidesReader.GetString(0), Inn = sidesReader.IsDBNull(1) ? null : sidesReader.GetString(1), Ogrn = sidesReader.IsDBNull(2) ? null : sidesReader.GetString(2), Address = sidesReader.IsDBNull(4) ? null : sidesReader.GetString(4) });
+                            break;
+                        //истец
+                        case (int)Participants.Claimant:
+                            if (rawCase.Claimant == null) rawCase.Claimant = new List<Participant>();
+                            rawCase.Claimant.Add(new Participant() { Name = sidesReader.IsDBNull(0) ? null : sidesReader.GetString(0), Inn = sidesReader.IsDBNull(1) ? null : sidesReader.GetString(1), Ogrn = sidesReader.IsDBNull(2) ? null : sidesReader.GetString(2), Address = sidesReader.IsDBNull(4) ? null : sidesReader.GetString(4) });
+                            break;
+                        //третья сторона
+                        case (int)Participants.ThirdParty:
+                            if (rawCase.ThirdParty == null) rawCase.ThirdParty = new List<Participant>();
+                            rawCase.ThirdParty.Add(new Participant() { Name = sidesReader.IsDBNull(0) ? null : sidesReader.GetString(0), Inn = sidesReader.IsDBNull(1) ? null : sidesReader.GetString(1), Ogrn = sidesReader.IsDBNull(2) ? null : sidesReader.GetString(2), Address = sidesReader.IsDBNull(4) ? null : sidesReader.GetString(4) });
+                            break;
+                        default:
+                            break;
+                    }
+
+                }
+
+                sidesReader.Close();
+
+                //получаем документу по делу в первой инстанции
+                var documentReader = connector.ExecuteQuery("select Documents.VersionId, Documents.TypeId, Documents.ContentTypeId from Documents where (Documents.CaseId =" + rawCase.CaseId + ")");
+                if (documentReader.HasRows)
+                    rawCase.Documents = new List<Document>();
+
+                while (documentReader.Read())
+                {
+                    try
+                    {
+                        if (!documentReader.IsDBNull(1))
+                        {
+                            var doc = new Document(documentTypes[(int)documentReader.GetInt32(1)]);
+
+                            //получаем тип содержимого документа
+                            if (!documentReader.IsDBNull(2))
+                            {
+                                var contId = (int)documentReader.GetInt32(2);
+                                if (documentContentTypes.ContainsKey(contId))
+                                {
+                                    doc.DocContent = documentContentTypes[contId];
+                                    if (doc.DocContent.Contains("удовлетворить ходатайство"))
+                                    {
+                                        rawCase.Petition = true;
+                                    }
+
+                                    if (doc.DocContent.Contains("встречный иск"))
+                                    {
+                                        rawCase.Counterclaim = true;
+                                    }
+                                }
+                                else doc.DocContent = string.Empty;
+                            }
+
+                            //получаем название файла
+                            if (!documentReader.IsDBNull(0))
+                            {
+                                if (rawCase.SolutionFilename == null) rawCase.SolutionFilename = new List<string>();
+                                rawCase.SolutionFilename.Add(documentReader.GetString(0));
+
+                                doc.Filename = documentReader.GetString(0);
+                            }
+                            rawCase.Documents.Add(doc);
+                        }
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                }
+
+                documentReader.Close();
+
+                var finalInstanceReader = connector.ExecuteQuery("select FinalInstance from [Финальная инстанция1] where [Финальная инстанция1].CaseId =" + rawCase.CaseId);
+                while (finalInstanceReader.Read())
+                {
+                    rawCase.FinalInstanceId = finalInstanceReader.IsDBNull(0) ? -1 : finalInstanceReader.GetInt32(0);
+                }
+
+                finalInstanceReader.Close();
+
+                var reconsiderationReader = connector.ExecuteQuery("select count(RegistrationDate) from Instances where InstanceLevelId = 1 and CaseId =" + rawCase.CaseId);
+                while (reconsiderationReader.Read())
+                {
+                    if (!reconsiderationReader.IsDBNull(0))
+                    {
+                        rawCase.Reconsideration = reconsiderationReader.GetInt32(0) > 1 ? true : false;
+                    }
+                }
+
+                reconsiderationReader.Close();
+            }
+            finally
+            {
+                connector.CloseConnection();
+            }
+
+            rawCases.Add(rawCase);
         }
     }
 }

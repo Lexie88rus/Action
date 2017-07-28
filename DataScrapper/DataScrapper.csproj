@@ -61,11 +61,19 @@
     <Compile Include="CaseDb.cs" />
     <Compile Include="Document.cs" />
     <Compile Include="Enumeration.cs" />
+    <Compile Include="Feature.cs" />
+    <Compile Include="FeatureExport.cs" />
     <Compile Include="KadConnector.cs" />
     <Compile Include="Participant.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Scrapper.cs" />
     <Compile Include="SolutionProcessor.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CaseModel\CaseModel.csproj">
+      <Project>{cfae439a-beb7-44a1-8737-4601352ee999}</Project>
+      <Name>CaseModel</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
