@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.OleDb;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DataScrapper
@@ -19,7 +20,15 @@ namespace DataScrapper
 
         private string connString;
 
-        private const int tasksNum = 10;
+        private const int maxTasksNum = 5;
+
+        private int currentTasksNum = 0;
+
+        static readonly object locker = new object();
+
+        private List<Task> tasks = new List<Task>();
+
+        private int processed = 0;
 
         /// <summary>
         /// Сырые данные о делах
@@ -109,10 +118,6 @@ namespace DataScrapper
             reader.Close();
         }
 
-        Task[] taskList = new Task[Scrapper.tasksNum];
-
-        static readonly object locker = new object();
-
         /// <summary>
         /// Получение сырых данных о делах
         /// </summary>
@@ -124,10 +129,11 @@ namespace DataScrapper
             this.GetDocumentContentTypes(connector);
             this.GetDocumentTypes(connector);
 
+            var factory = new TaskFactory();
+
             //Получаем основные данные о делах
             var reader = connector.ExecuteQuery("select RID, CourtId, Date, Sum, CategoryDisputeId, CaseId from Cases");
 
-            int i = 0;
             while (reader.Read())
             {
 
@@ -144,15 +150,15 @@ namespace DataScrapper
                         CaseId = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
                     };
 
-                    GetData(this.connString, rawCase);
+                    while (this.currentTasksNum >= maxTasksNum) Thread.Sleep(2000);
 
-                    i++;
+                    tasks.Add(factory.StartNew(() => GetData(this.connString, rawCase)));
 
-                    if (i % 50 == 0)
+                    if (processed % 100 == 0)
                     {
-                        Console.WriteLine("Собрано данных по делам:" + i);
-                        var cases = this.rawCases.Select(c => c.ConvertToCase((int)Decisions.Partial, this.DocumentTypes)).ToList();
-                        FeatureExport.ExportToCSV(cases, "D:\\Data Monsters\\Action\\dataset" + i.ToString() +".csv", ";");
+                        Console.WriteLine("Собрано данных по делам:" + processed);
+                        var pr = this.rawCases.Select(c => c.ConvertToCase((int)Decisions.Partial, this.DocumentTypes)).ToList();
+                        FeatureExport.ExportToCSV(pr, "D:\\Data Monsters\\Action\\dataset" + processed.ToString() +".csv", ";");
                     }
                 }
                 catch
@@ -161,11 +167,21 @@ namespace DataScrapper
                 }
             }
 
+            Task.WaitAll(tasks.ToArray());
+
+            var cases = this.rawCases.Select(c => c.ConvertToCase((int)Decisions.Partial, this.DocumentTypes)).ToList();
+            FeatureExport.ExportToCSV(cases, "D:\\Data Monsters\\Action\\dataset" + processed.ToString() + ".csv", ";");
+
             reader.Close();
         }
 
         private void GetData(string connString, CaseDb rawCase)
         {
+            lock(locker)
+            {
+                this.currentTasksNum++;
+            }
+
             var connector = new KadConnector(connString);
 
             try
@@ -279,7 +295,12 @@ namespace DataScrapper
                 connector.CloseConnection();
             }
 
-            rawCases.Add(rawCase);
+            lock (locker)
+            {
+                rawCases.Add(rawCase);
+                this.currentTasksNum--;
+                this.processed++;
+            }
         }
     }
 }
