@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.OleDb;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -60,14 +62,13 @@ namespace DataScrapper
         /// </summary>
         /// <param name="connector"></param>
         /// <returns></returns>
-        public static int GetJudgeId(KadConnector connector, string judgeName, int courtId)
+        public static int GetJudgeId(KadConnector connector, string judgeName, int courtId = 0)
         {
             if (connector == null) throw new ArgumentNullException("connector");
 
             try
             {
-
-                var reader = connector.ExecuteQuery("select Id from Judges where CourtId = " + courtId + " and Name = \"" + judgeName + "\"");
+                var reader = courtId > 0 ? connector.ExecuteQuery("select Id from Judges where CourtId = " + courtId + " and Name = \"" + judgeName + "\"") : connector.ExecuteQuery("select Id from Judges where Name = \"" + judgeName + "\"");
 
                 reader.Read();
 
@@ -82,6 +83,39 @@ namespace DataScrapper
             {
                 return -1;
             }
+        }
+
+        public static double GetAmount(string solutionText)
+        {
+            //var sw = new Stopwatch();
+
+            Regex rx = new Regex(@"(\d+(?:\s\d+)?(?:\.\d{1,2})?)",
+              RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+            var index = solutionText.IndexOf("РЕШИЛ", StringComparison.Ordinal);
+
+           
+            MatchCollection matches = rx.Matches(solutionText, index < 0 ? 0 : index);
+
+            double amount = 0;
+
+            for(var i=0; i < matches.Count; i++)
+            {
+                if (matches[i].Value.Length <= 6)
+                {
+                    char[] chars = new[] {'\n', ' ', '\t'};
+                    double am;
+                    if (!double.TryParse(matches[i].Value.Trim(chars).Split('.').FirstOrDefault().Split('\n').FirstOrDefault(), out am))
+                    {
+                        am = 0;
+                    }
+                    amount += am;
+                }
+            }
+
+           //Console.WriteLine("Прошло " + sw.ElapsedMilliseconds);
+
+            return amount;
         }
     }
 }

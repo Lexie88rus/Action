@@ -16,13 +16,15 @@ namespace DataScrappingTool
             {
                 //var connector = new KadConnector(@"D:\Data Monsters\Action\kad_10000.accdb");
 
-                //var filename = @"D:\Data Monsters\Action\PravoRu_Export\PravoRu_Export\dc6370bb-db3f-4985-ab81-4b3550f26e20.pdf.txt";
-                //var text = SolutionProcessor.GetSolutionText(filename);
+                var filename = @"F:\Work\Action\AugustUpdate\Pravoru_Export\Documents\Partial\TXT\158184757.pdf.txt";
+                var text = SolutionProcessor.GetSolutionText(filename);
+                var d = SolutionProcessor.GetAmount(text);
+
                 //var str = SolutionProcessor.GetJudgeName(text);
 
                 //var connector = new KadConnector(@"D:\Data Monsters\Action\Databases\Refuse.accdb");
 
-                var connector = new KadConnector(@"D:\Data Monsters\Action\Databases\Partial.accdb");
+                var connector = new KadConnector(@"F:\Work\Action\AugustUpdate\Satisfy400000.accdb");
 
                 var cases = new List<Case>();
 
@@ -31,17 +33,17 @@ namespace DataScrappingTool
 
                     //var judgeId = SolutionProcessor.GetJudgeId(connector, str, 1);
 
-                    var scrapper = new Scrapper(connector, @"D:\Data Monsters\Action\Databases\Partial.accdb");
+                    var scrapper = new Scrapper(connector, @"F:\Work\Action\AugustUpdate\Satisfy400000.accdb");
                     var casesDb = scrapper.RawCases;
 
-                    cases = casesDb.Select(c => c.ConvertToCase((int)Decisions.Partial, scrapper.DocumentTypes)).ToList();
+                    cases = casesDb.Select(c => c.ConvertToCase((int)Decisions.Fully, scrapper.DocumentTypes)).ToList();
                 }
                 finally
                 {
                     connector.CloseConnection();
                 }
 
-                FeatureExport.ExportToCSV(cases, "D:\\Data Monsters\\Action\\dataset.csv", ";");
+                FeatureExport.ExportToCSV(cases, @"F:\Work\Action\AugustUpdate\dataset.csv", ";");
             }
             catch (Exception e)
             {

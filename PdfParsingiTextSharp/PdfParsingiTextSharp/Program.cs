@@ -12,16 +12,29 @@ namespace PdfParsingiTextSharp
     {
         static void Main(string[] args)
         {
-            var files = Directory.GetFiles(@"D:\Data Monsters\Action\PravoRu_Export\PravoRu_Export");
+            var files = Directory.GetFiles(@"F:\Work\Action\AugustUpdate\Pravoru_Export\Documents\Partial");
+            var i = 0;
+
             foreach (var f in files)
             {
-                var text = ExtractTextFromPdf(f);
-                var file = f + ".txt";
+                try
+                {
+                    var text = ExtractTextFromPdf(f);
+                    var file = @"F:\Work\Action\AugustUpdate\Pravoru_Export\Documents\Partial\TXT\" + Path.GetFileName(f) + ".txt";
 
-                var fileStream = new System.IO.StreamWriter(file);
-                fileStream.Write(text);
+                    var fileStream = new System.IO.StreamWriter(file);
+                    fileStream.Write(text);
 
-                fileStream.Close();
+                    fileStream.Close();
+
+                    i++;
+                    Console.WriteLine("Сконвертировано " + i + " из " + files.Length);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+
             }
         }
 
