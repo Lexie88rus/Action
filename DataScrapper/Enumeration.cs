@@ -32,4 +32,15 @@ namespace DataScrapper
         Partial = 1,
         Fully =2
     }
+
+    public enum FormsOwnership
+    {
+        Unknown = -1,
+        OAO = 1,
+        ZAO = 2,
+        Gov = 3,
+        OtherComp = 4,
+        IndividualEntrepreneur = 5,
+        Person =6
+    }
 }

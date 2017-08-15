@@ -13,6 +13,9 @@ namespace DataScrapper
     {
         public Scrapper(KadConnector connector, string connString)
         {
+            if (connector == null) throw new ArgumentNullException("connector");
+            if (string.IsNullOrEmpty(connString)) throw new ArgumentNullException("connString");
+
             this.connector = connector; //?? throw new ArgumentNullException("connector");
             this.connString = connString;
                 //String.IsNullOrEmpty(connString) ? throw new ArgumentNullException("connString") :  connString;

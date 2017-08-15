@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataScrappingTool", "DataScrappingTool\DataScrappingTool.csproj", "{5858E4A1-10D7-475C-934A-75B5D331F324}"
 EndProject
@@ -86,8 +86,8 @@ Global
 		{6CF06A7C-4EA0-4DAA-ADAB-C66AE34F3D0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6CF06A7C-4EA0-4DAA-ADAB-C66AE34F3D0C}.Debug|x64.ActiveCfg = Debug|x64
 		{6CF06A7C-4EA0-4DAA-ADAB-C66AE34F3D0C}.Debug|x64.Build.0 = Debug|x64
-		{6CF06A7C-4EA0-4DAA-ADAB-C66AE34F3D0C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{6CF06A7C-4EA0-4DAA-ADAB-C66AE34F3D0C}.Debug|x86.Build.0 = Debug|Any CPU
+		{6CF06A7C-4EA0-4DAA-ADAB-C66AE34F3D0C}.Debug|x86.ActiveCfg = Debug|x86
+		{6CF06A7C-4EA0-4DAA-ADAB-C66AE34F3D0C}.Debug|x86.Build.0 = Debug|x86
 		{6CF06A7C-4EA0-4DAA-ADAB-C66AE34F3D0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6CF06A7C-4EA0-4DAA-ADAB-C66AE34F3D0C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6CF06A7C-4EA0-4DAA-ADAB-C66AE34F3D0C}.Release|x64.ActiveCfg = Release|Any CPU

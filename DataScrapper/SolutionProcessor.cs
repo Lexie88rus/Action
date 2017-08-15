@@ -85,37 +85,82 @@ namespace DataScrapper
             }
         }
 
-        public static double GetAmount(string solutionText)
+        public static string ApplyPattern(string text, string pattern)
         {
-            //var sw = new Stopwatch();
+            Regex rx = new Regex(pattern,
+             RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
-            Regex rx = new Regex(@"(\d+(?:\s\d+)?(?:\.\d{1,2})?)",
-              RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            MatchCollection matches = rx.Matches(text, 0);
 
-            var index = solutionText.IndexOf("РЕШИЛ", StringComparison.Ordinal);
+            string amount = string.Empty;
 
-           
-            MatchCollection matches = rx.Matches(solutionText, index < 0 ? 0 : index);
+            if (matches.Count == 0) return amount;
 
-            double amount = 0;
-
-            for(var i=0; i < matches.Count; i++)
+            foreach (Match match in matches)
             {
-                if (matches[i].Value.Length <= 6)
+                amount += match.Groups["amount"];
+            }
+
+            return amount;
+        }
+
+        public static int GetAmount(string text, string pattern)
+        {
+            Regex rx = new Regex(pattern,
+             RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+            MatchCollection matches = rx.Matches(text, 0);
+
+            int rub = 0;
+
+            if (matches.Count == 0) return rub;
+
+            foreach (Match match in matches)
+            {
+                char[] decsym = { '.', ',' };
+                var str = match.Groups["rub"].Value.Replace(" ", "").Split(decsym).FirstOrDefault();   
+
+                var pt = new Regex(@"\d+",
+             RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                var m = pt.Matches(str);
+
+                foreach(Match mtch in m)
                 {
-                    char[] chars = new[] {'\n', ' ', '\t'};
-                    double am;
-                    if (!double.TryParse(matches[i].Value.Trim(chars).Split('.').FirstOrDefault().Split('\n').FirstOrDefault(), out am))
+                    double r;
+                    if (double.TryParse(mtch.Value, out r))
                     {
-                        am = 0;
+                        rub += (int)r;
                     }
-                    amount += am;
                 }
             }
 
-           //Console.WriteLine("Прошло " + sw.ElapsedMilliseconds);
+            return rub;
+        }
 
-            return amount;
+        public static int GetClaimantPresence(string text)
+        {
+            var pattern = @"от\s*истц(а|ов)\s*\W*\s*представител(ь|и)\s*не\s*явил(ись|ся)";
+
+            Regex rx = new Regex(pattern,
+             RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+            MatchCollection matches = rx.Matches(text, 0);
+
+            if (matches.Count == 0) return 0;
+            else return 1;
+        }
+
+        public static int GetRespondentPres(string text)
+        {
+            var pattern = @"от\s*ответчик(а|ов)\s*\W*\s*представител(ь|и)\s*не\s*явил(ись|ся)";
+
+            Regex rx = new Regex(pattern,
+             RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+            MatchCollection matches = rx.Matches(text, 0);
+
+            if (matches.Count == 0) return 0;
+            else return 1;
         }
     }
 }
