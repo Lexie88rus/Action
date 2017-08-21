@@ -7,14 +7,32 @@ using System.Threading.Tasks;
 
 namespace CaseModel
 {
+    /// <summary>
+    /// Класс для описания фичи
+    /// </summary>
     public class Feature : IFeature
     {
+        /// <summary>
+        /// Значение фичи
+        /// </summary>
         public int[] Value { get;}
 
+        /// <summary>
+        /// Название фичи
+        /// </summary>
         public string[] Name { get;}
 
+        /// <summary>
+        /// Экспортировать ли фичу в файл с результатом
+        /// </summary>
         public bool ToBeExported { get; set; }
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="value">Значение фичи</param>
+        /// <param name="name">Название фичи</param>
+        /// <param name="toBeExported">Экспортировать ли фичу, по умолчинию "true"</param>
         public Feature(int value, string name, bool toBeExported = true)
         {
             this.Value = new int[1];
@@ -26,6 +44,12 @@ namespace CaseModel
             this.ToBeExported = toBeExported;
         }
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="value">Значение фичи</param>
+        /// <param name="name">Название фичи</param>
+        /// <param name="toBeExported">Экспортировать ли фичу, по умолчинию "true"</param>
         public Feature(bool value, string name, bool toBeExported = true)
         {
             this.Value = new int[1];
@@ -37,6 +61,12 @@ namespace CaseModel
             this.ToBeExported = toBeExported;
         }
 
+        /// <summary>
+        /// Конструктор из массива значений
+        /// </summary>
+        /// <param name="value">Значение фичи</param>
+        /// <param name="name">Название фичи</param>
+        /// <param name="toBeExported">Экспортировать ли фичу, по умолчинию "true"</param>
         public Feature(IEnumerable<int> value, IEnumerable<string> name, bool toBeExported = true)
         {
             this.Value = new int [value.Count()];
@@ -48,6 +78,12 @@ namespace CaseModel
             this.ToBeExported = toBeExported;
         }
 
+        /// <summary>
+        /// Конструктор из массива значений
+        /// </summary>
+        /// <param name="value">Значение фичи</param>
+        /// <param name="name">Название фичи</param>
+        /// <param name="toBeExported">Экспортировать ли фичу, по умолчинию "true"</param>
         public Feature(IEnumerable<bool> value, IEnumerable<string> name, bool toBeExported = true)
         {
             this.Value = new int[value.Count()];
@@ -60,14 +96,32 @@ namespace CaseModel
         }
     }
 
+    /// <summary>
+    /// Фича для представления документов
+    /// </summary>
     public class DocumentsFeature : IFeature
     {
+        /// <summary>
+        /// Значение
+        /// </summary>
         public int[] Value { get; }
 
+        /// <summary>
+        /// Названия документов
+        /// </summary>
         public string[] Name { get; }
 
+        /// <summary>
+        /// Экспортировать ли в файл с результатами
+        /// </summary>
         public bool ToBeExported { get; set; }
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="documents">Документы</param>
+        /// <param name="documentTypes">Типы документов</param>
+        /// <param name="toBeExported">Экспортировать ли</param>
         public DocumentsFeature(IList<Document> documents, IDictionary<int, string> documentTypes, bool toBeExported = true)
         {
             if (documentTypes == null) throw new ArgumentNullException("documentTypes");

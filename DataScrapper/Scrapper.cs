@@ -9,21 +9,30 @@ using System.Threading.Tasks;
 
 namespace DataScrapper
 {
+    /// <summary>
+    /// Класс, содержащий методы для извлечения данных по делу из МЕТАДАННЫХ
+    /// </summary>
     public class Scrapper
     {
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="connector">Подключение к БД Access, куда складывать результат</param>
+        /// <param name="connString">Строка для подключения к БД Access</param>
         public Scrapper(KadConnector connector, string connString)
         {
             if (connector == null) throw new ArgumentNullException("connector");
             if (string.IsNullOrEmpty(connString)) throw new ArgumentNullException("connString");
 
-            this.connector = connector; //?? throw new ArgumentNullException("connector");
+            this.connector = connector; 
             this.connString = connString;
-                //String.IsNullOrEmpty(connString) ? throw new ArgumentNullException("connString") :  connString;
         }
 
         private KadConnector connector;
 
         private string connString;
+
+        #region Для многопоточности
 
         private const int maxTasksNum = 5;
 
@@ -33,6 +42,11 @@ namespace DataScrapper
 
         private List<Task> tasks = new List<Task>();
 
+        #endregion
+
+        /// <summary>
+        /// Счетчик обработанных дел
+        /// </summary>
         private int processed = 0;
 
         /// <summary>
@@ -50,6 +64,9 @@ namespace DataScrapper
         /// </summary>
         private Dictionary<int, string> documentContentTypes = new Dictionary<int, string>();
 
+        /// <summary>
+        /// Сырые данные о делах из метаданных
+        /// </summary>
         public IList<CaseDb> RawCases
         {
             get
@@ -63,6 +80,9 @@ namespace DataScrapper
             }
         }
 
+        /// <summary>
+        /// Типы документов из метаданных
+        /// </summary>
         public IDictionary<int, string> DocumentTypes
         {
             get
@@ -76,6 +96,9 @@ namespace DataScrapper
             }
         }
 
+        /// <summary>
+        /// Типы содержимого документов из метаданных
+        /// </summary>
         public IDictionary<int, string> DocumentContentTypes
         {
             get
@@ -145,7 +168,6 @@ namespace DataScrapper
                 try
                 {
                     Stopwatch s1 = Stopwatch.StartNew();
-                    //Console.WriteLine("1 Прошло: " + s1.ElapsedMilliseconds + " мс.");
 
                     //получаем основные данные по делу
                     var rawCase = new CaseDb()
@@ -155,23 +177,25 @@ namespace DataScrapper
                         Date = reader.IsDBNull(2) ? DateTime.MinValue : reader.GetDateTime(2),
                         Amount = reader.IsDBNull(3) ? 0 : (int)reader.GetDouble(3),
                         CategoryId = reader.IsDBNull(4) ? 0 : (int)reader.GetInt32(4),
-                        //CaseId = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
                     };
 
-                    //Console.WriteLine("2 Прошло: " + s1.ElapsedMilliseconds + " мс.");
+                    #region для многопоточности
 
                     //while (this.currentTasksNum >= maxTasksNum) Thread.Sleep(2000);
 
                     //tasks.Add(factory.StartNew(() => GetData(this.connString, rawCase)));
 
-                    //жопа тут
+                    #endregion
+
+                    //получаем все данные
                     GetData(connector, rawCase);
 
+                    //добавляем данные в массив
                     rawCases.Add(rawCase);
 
+                    //делаем промежуточный дамп собранных данных
                     if (processed % 10000 == 0)
                     {
-                        //Console.WriteLine("Собрано данных по делам:" + processed);
                         var pr = rawCases.Select(c => c.ConvertToCase((int)Decisions.Fully, this.DocumentTypes)).ToList();
                         FeatureExport.ExportToCSV(pr, "F:\\Work\\Action\\AugustUpdate\\dataset" + processed.ToString() +".csv", ";");
                     }
@@ -184,8 +208,13 @@ namespace DataScrapper
                 }
             }
 
+            #region для многопоточности
+
             //Task.WaitAll(tasks.ToArray());
 
+#endregion
+
+            //Складываем результат
             var cases = this.rawCases.Select(c => c.ConvertToCase((int)Decisions.Fully, this.DocumentTypes)).ToList();
             FeatureExport.ExportToCSV(cases, "F:\\Work\\Action\\AugustUpdate\\dataset" + processed.ToString() + ".csv", ";");
 
@@ -194,12 +223,14 @@ namespace DataScrapper
 
         private void GetData(KadConnector connector, CaseDb rawCase)
         {
+            #region для многопоточности
+
             //lock(locker)
             //{
             //    this.currentTasksNum++;
             //}
 
-            //var connector = new KadConnector(connString);
+            #endregion
 
             try
             {
@@ -209,11 +240,8 @@ namespace DataScrapper
                     connector.ExecuteQuery("select Name, Inn, Ogrn, SideTypeId, Address from Sides where CaseRID = " +
                                            rawCase.RID);
 
-                //Console.WriteLine("1 Прошло: " + s2.ElapsedMilliseconds + " мс.");
                 while (sidesReader.Read())
                 {
-                    //Console.WriteLine("2 Прошло: " + s2.ElapsedMilliseconds + " мс.");
-                    //здесь пол секунды
                     if (sidesReader.IsDBNull(3)) break;
 
                     var sideType = (int) sidesReader.GetInt32(3);
@@ -258,11 +286,7 @@ namespace DataScrapper
 
                 }
 
-                //Console.WriteLine("3 Прошло: " + s2.ElapsedMilliseconds + " мс.");
-
                 sidesReader.Close();
-
-                //Console.WriteLine("4 Прошло: " + s2.ElapsedMilliseconds + " мс.");
 
                 //получаем документу по делу в первой инстанции
                 var documentReader =
@@ -272,8 +296,6 @@ namespace DataScrapper
                 if (documentReader.HasRows)
                     rawCase.Documents = new List<Document>();
 
-                //Console.WriteLine("5 Прошло: " + s2.ElapsedMilliseconds + " мс.");
-
                 while (documentReader.Read())
                 {
                     try
@@ -281,8 +303,6 @@ namespace DataScrapper
                         if (!documentReader.IsDBNull(1))
                         {
                             var doc = new Document(documentTypes[(int) documentReader.GetInt32(1)]);
-
-                            //Console.WriteLine("6 Прошло: " + s2.ElapsedMilliseconds + " мс.");
 
                             //получаем тип содержимого документа
                             if (!documentReader.IsDBNull(2))
@@ -304,8 +324,6 @@ namespace DataScrapper
                                 else doc.DocContent = string.Empty;
                             }
 
-                            //Console.WriteLine("7 Прошло: " + s2.ElapsedMilliseconds + " мс.");
-
                             //получаем название файла
                             if (!documentReader.IsDBNull(0))
                             {
@@ -314,10 +332,8 @@ namespace DataScrapper
 
                                 doc.Filename = documentReader.GetString(0);
                             }
-                            //Console.WriteLine("8 Прошло: " + s2.ElapsedMilliseconds + " мс.");
+                            
                             rawCase.Documents.Add(doc);
-
-                            //Console.WriteLine("9 Прошло: " + s2.ElapsedMilliseconds + " мс.");
                         }
                     }
                     catch
@@ -328,7 +344,7 @@ namespace DataScrapper
 
                 documentReader.Close();
 
-                //Console.WriteLine("10 Прошло: " + s2.ElapsedMilliseconds + " мс.");
+                //финальная инстанция
 
                 var finalInstanceReader =
                     connector.ExecuteQuery(
@@ -336,12 +352,12 @@ namespace DataScrapper
                         rawCase.RID);
                 while (finalInstanceReader.Read())
                 {
-                    //Console.WriteLine("11 Прошло: " + s2.ElapsedMilliseconds + " мс.");
                     rawCase.FinalInstanceId = finalInstanceReader.IsDBNull(0) ? -1 : finalInstanceReader.GetInt32(0);
                 }
 
                 finalInstanceReader.Close();
-                //Console.WriteLine("12 Прошло: " + s2.ElapsedMilliseconds + " мс.");
+
+                //повторное рассмотрение
 
                 var reconsiderationReader =
                     connector.ExecuteQuery(
@@ -349,7 +365,6 @@ namespace DataScrapper
                         rawCase.RID);
                 while (reconsiderationReader.Read())
                 {
-                    //Console.WriteLine("13 Прошло: " + s2.ElapsedMilliseconds + " мс.");
                     if (!reconsiderationReader.IsDBNull(0))
                     {
                         rawCase.Reconsideration = reconsiderationReader.GetInt32(0) > 1 ? true : false;
@@ -357,19 +372,15 @@ namespace DataScrapper
                 }
 
                 reconsiderationReader.Close();
-                //Console.WriteLine("14 Прошло: " + s2.ElapsedMilliseconds + " мс.");
-                //Console.WriteLine("15 Прошло: " + s2.ElapsedMilliseconds + " мс.");
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
-            //finally
-            //{
-            //    connector.CloseConnection();
-            //}
 
             this.processed++;
+
+            #region для многопоточности
 
             //lock (locker)
             //{
@@ -377,6 +388,8 @@ namespace DataScrapper
             //    this.currentTasksNum--;
             //    this.processed++;
             //}
+
+            #endregion
         }
     }
 }

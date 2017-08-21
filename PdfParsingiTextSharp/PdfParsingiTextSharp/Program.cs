@@ -8,10 +8,14 @@ using System.IO;
 
 namespace PdfParsingiTextSharp
 {
+    /// <summary>
+    /// Консольное приложение для перевода всех решений в txt
+    /// </summary>
     class Program
     {
         static void Main(string[] args)
         {
+            //получаем все файлы с решениями
             var files = Directory.GetFiles(@"F:\Work\Action\AugustUpdate\Pravoru_Export\Documents\Partial");
             var i = 0;
 
@@ -19,7 +23,9 @@ namespace PdfParsingiTextSharp
             {
                 try
                 {
+                    //получаем текст решения
                     var text = ExtractTextFromPdf(f);
+                    //открываем файл, куда запишем текст решения
                     var file = @"F:\Work\Action\AugustUpdate\Pravoru_Export\Documents\Partial\TXT\" + Path.GetFileName(f) + ".txt";
 
                     var fileStream = new System.IO.StreamWriter(file);
@@ -38,6 +44,11 @@ namespace PdfParsingiTextSharp
             }
         }
 
+        /// <summary>
+        /// Получаем текст решения суда
+        /// </summary>
+        /// <param name="path">Путь к файлу с решением суда</param>
+        /// <returns></returns>
         public static string ExtractTextFromPdf(string path)
         {
             using (PdfReader reader = new PdfReader(path))

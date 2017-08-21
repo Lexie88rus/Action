@@ -33,6 +33,9 @@ namespace DataScrapper
         Fully =2
     }
 
+    /// <summary>
+    /// Формы собственности
+    /// </summary>
     public enum FormsOwnership
     {
         Unknown = -1,
