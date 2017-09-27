@@ -118,13 +118,13 @@ namespace DataScrapper
         /// <returns></returns>
         private static int GetOwnership(string name, string inn, string ogrn)
         {
-            var pt_OAO = @"ООО";
+            var pt_OOO = @"ООО";
             var pt_ZAO = @"ЗАО";
             var pt_gov = @"Федеральная налоговая служба|ИФНС|МИФНС|ФНС|Министерство|Инспекция|государств|федеральн";
             var pt_eng = @"[a-zA-Z]+";
             var pt_ip = @"ИП";
 
-            if (ApplyPattern(pt_OAO, name)) return (int)FormsOwnership.OAO;
+            if (ApplyPattern(pt_OOO, name)) return (int)FormsOwnership.OOO;
             if (ApplyPattern(pt_ZAO, name)) return (int)FormsOwnership.ZAO;
             if (ApplyPattern(pt_gov, name)) return (int)FormsOwnership.Gov;
 

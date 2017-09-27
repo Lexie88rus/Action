@@ -39,7 +39,7 @@ namespace DataScrapper
     public enum FormsOwnership
     {
         Unknown = -1,
-        OAO = 1,
+        OOO = 1,
         ZAO = 2,
         Gov = 3,
         OtherComp = 4,
